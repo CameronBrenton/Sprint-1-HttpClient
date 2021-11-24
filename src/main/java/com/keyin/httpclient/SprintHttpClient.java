@@ -28,16 +28,17 @@ public class SprintHttpClient {
     private static HttpPost httpPost;
     private static HttpResponse response;
     private static Scanner scanner;
-    private static int input; // Integer user input
-    private static String input2, firstName, lastName, email, phoneNumber; // String user input
+    private static int input, input2; // Integer user input
+    private static String input3, firstName, lastName, email, phoneNumber, id; // String user input
     private static HashMap values;
     private static ObjectMapper objectMapper;
     private static String requestBody;
     public static void main(String[] args) throws UnsupportedEncodingException, JsonProcessingException {
         while(true){
             client = HttpClient.newHttpClient();
-            System.out.println("Welcome. Please choose an API call number or enter 0 to exit");
-            System.out.println("Choices: 1. GET all People. 2. GET all People by Last Name 3. POST new people");
+            System.out.println("Welcome. What data would you like to interact with?");
+            System.out.println("Choices: 1. People. 2. Members 3. Tournaments" +
+                    " 4. Current Tournaments 4. Past Tournaments 5. Future Tournaments 6. Final Standings");
             scanner = new Scanner(System.in);
             input = scanner.nextInt();
 
@@ -47,84 +48,114 @@ public class SprintHttpClient {
                     System.out.println("Goodbye!");
                     System.exit(0);
                 case 1:
-                    request = HttpRequest.newBuilder().uri(URI.create("http://localhost:8080/api/people")).build();
-                    try {
-                        HttpResponse<String> response = client.send(request, HttpResponse.BodyHandlers.ofString());
-                        if (response.statusCode()==200) {
-                            System.out.println(response.body());
-                            System.out.println();
+                    while(true){
+                        System.out.println("Please choose an option or enter 0 to exit");
+                        System.out.println("Choices: 1. GET all People. 2. GET all People by Last Name 3. POST new people" +
+                                "4. UPDATE People by id 5. DELETE People by Id");
+                        input2 = scanner.nextInt();
+                        if(input2 == 0){
+                            break;
                         }
-                        else{
-                            System.out.print("*** Error Code *** : " + response.statusCode() + "\n \n");
-                        }
+                        switch(input2){
+                            case 1:
+                                request = HttpRequest.newBuilder().uri(URI.create("http://localhost:8080/api/people")).build();
+                                try {
+                                    HttpResponse<String> response = client.send(request, HttpResponse.BodyHandlers.ofString());
+                                    if (response.statusCode()==200) {
+                                        System.out.println(response.body());
+                                        System.out.println();
+                                    }
+                                    else{
+                                        System.out.print("*** Error Code *** : " + response.statusCode() + "\n \n");
+                                    }
 
-                    } catch (IOException | InterruptedException e) {
-                        e.printStackTrace();
+                                } catch (IOException | InterruptedException e) {
+                                    e.printStackTrace();
+                                }
+                                break;
+                            case 2:
+                                System.out.println("Please enter the Last Name");
+                                input3 = scanner.next();
+                                request = HttpRequest.newBuilder().uri(URI.create("http://localhost:8080/api/people?lastName=" + input3)).build();
+                                try {
+                                    HttpResponse<String> response = client.send(request, HttpResponse.BodyHandlers.ofString());
+                                    if (response.statusCode()==200) {
+                                        System.out.println(response.body());
+                                        System.out.println();
+                                    }
+                                    else{
+                                        System.out.print("*** Error Code *** : " + response.statusCode() + "\n \n");
+                                    }
+
+                                } catch (IOException | InterruptedException e) {
+                                    e.printStackTrace();
+                                }
+                                break;
+                            case 3:
+                                System.out.println("Please enter the Person's info, you can leave any field blank");
+                                firstName = scanner.next();
+                                lastName = scanner.next();
+                                email = scanner.next();
+                                phoneNumber = scanner.next();
+                                values = new HashMap<String, String>(){{
+                                    put("firstName", firstName);
+                                    put("lastName", lastName);
+                                    put("email", email);
+                                    put("phoneNumber", phoneNumber);
+                                }};
+
+                                objectMapper = new ObjectMapper();
+                                requestBody = objectMapper.writeValueAsString(values);
+                                postRequest = HttpRequest.newBuilder()
+                                        .uri(URI.create("http://localhost:8080/api/people"))
+                                        .header("Content-Type", "application/json")
+                                        .POST(HttpRequest.BodyPublishers.ofString(requestBody))
+                                        .build();
+                                try {
+                                    response = client.send(postRequest,
+                                            HttpResponse.BodyHandlers.ofString());
+                                    if (response.statusCode()==200) {
+                                        System.out.println(response.body());
+                                        System.out.println();
+                                    }
+                                    else if(response.statusCode()==201){
+                                        System.out.println("### Post Successful ###" + "\n \n");
+                                    }
+                                    else{
+                                        System.out.print("*** Error Code *** : " + response.statusCode() + "\n \n");
+                                    }
+
+                                } catch (IOException | InterruptedException e) {
+                                    e.printStackTrace();
+                                }
+                                break;
+                            case 4:
+                                break;
+                            case 5:
+                                System.out.println("Please enter and ID for the record you wish to delete");
+                                id = scanner.next();
+                                request = HttpRequest.newBuilder().DELETE().uri(URI.create("http://localhost:8080/api/people/" + id)).build();
+                                try {
+                                    HttpResponse<String> response = client.send(request, HttpResponse.BodyHandlers.ofString());
+                                    if (response.statusCode()==204) {
+                                        System.out.println("### Successfully deleted Person object with ID: " + id + " ###");
+                                        System.out.println(response.body());
+                                        System.out.println();
+                                    }
+                                    else{
+                                        System.out.print("*** Error Code *** : " + response.statusCode() + "\n \n");
+                                    }
+
+                                } catch (IOException | InterruptedException e) {
+                                    e.printStackTrace();
+                                }
+                                break;
+                            default:
+                                System.out.println("Oops! Something went wrong :( Please try again or enter in 0 to exit.");
+                        }
                     }
-                    break;
+
                 case 2:
-                    System.out.println("Please enter the Last Name");
-                    input2 = scanner.next();
-                    request = HttpRequest.newBuilder().uri(URI.create("http://localhost:8080/api/people?lastName=" + input2)).build();
-                    try {
-                        HttpResponse<String> response = client.send(request, HttpResponse.BodyHandlers.ofString());
-                        if (response.statusCode()==200) {
-                            System.out.println(response.body());
-                            System.out.println();
-                        }
-                        else{
-                            System.out.print("*** Error Code *** : " + response.statusCode() + "\n \n");
-                        }
-
-                    } catch (IOException | InterruptedException e) {
-                        e.printStackTrace();
-                    }
-                    break;
-                case 3:
-                    System.out.println("Please enter the Person's info, you can leave any field blank");
-                    firstName = scanner.next();
-                    lastName = scanner.next();
-                    email = scanner.next();
-                    phoneNumber = scanner.next();
-                    values = new HashMap<String, String>(){{
-                        put("firstName", firstName);
-                        put("lastName", lastName);
-                        put("email", email);
-                        put("phoneNumber", phoneNumber);
-                    }};
-
-                    objectMapper = new ObjectMapper();
-                    requestBody = objectMapper.writeValueAsString(values);
-                    postRequest = HttpRequest.newBuilder()
-                            .uri(URI.create("http://localhost:8080/api/people"))
-                            .header("Content-Type", "application/json")
-                            .POST(HttpRequest.BodyPublishers.ofString(requestBody))
-                            .build();
-                    try {
-                        response = client.send(postRequest,
-                                HttpResponse.BodyHandlers.ofString());
-                        if (response.statusCode()==200) {
-                            System.out.println(response.body());
-                            System.out.println();
-                        }
-                        else if(response.statusCode()==201){
-                            System.out.println("### Post Successful ###" + "\n \n");
-                        }
-                        else{
-                            System.out.print("*** Error Code *** : " + response.statusCode() + "\n \n");
-                        }
-
-                    } catch (IOException | InterruptedException e) {
-                        e.printStackTrace();
-                    }
-                    break;
-
-
-                default:
-                    System.out.println("Oops! Something went wrong :( Please try again or enter in 0 to exit.");
-
-
-
             }
         }
     }
